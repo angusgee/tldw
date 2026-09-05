@@ -3,13 +3,11 @@ import { TldwError } from "../types.js";
 import { fetchWatchPage } from "./watch-page.js";
 import { fetchViaAndroidPlayer } from "./player.js";
 import { fetchViaWatchPageTracks } from "./timedtext.js";
-import { fetchViaYtdlp, ytdlpAvailable } from "./ytdlp.js";
 
 /**
  * Layered transcript extraction:
  *   1. InnerTube player endpoint, ANDROID client (caption URLs not PoToken-gated)
  *   2. Caption tracks from the watch page's web player response
- *   3. yt-dlp, only if installed
  */
 export async function getTranscript(
   videoId: string,
@@ -37,16 +35,6 @@ export async function getTranscript(
     return { videoId, title: page.title, segments, source: "timedtext" };
   } catch (err) {
     failures.push(`watch-page captions: ${(err as Error).message}`);
-  }
-
-  if (await ytdlpAvailable()) {
-    log("Watch-page captions failed, trying yt-dlp...");
-    try {
-      const segments = await fetchViaYtdlp(videoId, lang ?? "en");
-      return { videoId, title: page.title, segments, source: "ytdlp" };
-    } catch (err) {
-      failures.push(`yt-dlp: ${(err as Error).message}`);
-    }
   }
 
   throw new TldwError(

@@ -53,13 +53,12 @@ tldw <url> --model x --base-url y   # per-run provider overrides
 
 ## How it gets the transcript
 
-Three layers, tried in order:
+Two layers, tried in order:
 
 1. YouTube's InnerTube player API (Android client) — the same data the apps use
 2. Caption tracks from the watch page's embedded player response
-3. `yt-dlp`, only if you happen to have it installed
 
-All fetching happens from your machine with your IP, for the single video you asked about. Nothing is scraped in bulk and nothing is stored anywhere except your own disk (and only with `--save`).
+Everything is plain `fetch` from your machine with your IP, for the single video you asked about. TLDW never executes external programs, scrapes nothing in bulk, and stores nothing anywhere except your own disk (and only with `--save`).
 
 ## Disclaimer
 

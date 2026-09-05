@@ -7,7 +7,7 @@ export interface TranscriptSegment {
   offset: number;
 }
 
-export type TranscriptSource = "innertube" | "timedtext" | "ytdlp";
+export type TranscriptSource = "innertube" | "timedtext";
 
 export interface VideoTranscript {
   videoId: string;
