@@ -178,9 +178,12 @@ async function main(): Promise<void> {
 
   log(`Summarising with ${config.model}...\n`);
   const summary = await collectStream(
-    streamCompletion(config, summaryPrompt(fullText), 1024, usage),
+    streamCompletion(config, summaryPrompt(fullText), 2048, usage),
     !args.json
   );
+  if (usage.truncated) {
+    log("\nWarning: the model hit its output limit; the summary may be incomplete.");
+  }
 
   let fullTranscriptMd: string | undefined;
   if (args.full) {

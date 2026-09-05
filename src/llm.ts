@@ -9,6 +9,8 @@ export interface LlmConfig {
 export interface LlmUsage {
   promptTokens?: number;
   completionTokens?: number;
+  /** Set when the model stopped because it hit max_tokens. */
+  truncated?: boolean;
   /** Any provider-specific extras (e.g. NeuralWatt energy figures). */
   extras: Record<string, unknown>;
 }
@@ -79,6 +81,37 @@ export async function* streamCompletion(
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+
+  function* handleLine(line: string, out: LlmUsage): Generator<string> {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("data:")) return;
+    const payload = trimmed.slice(5).trim();
+    if (payload === "[DONE]") return;
+    let json: any;
+    try {
+      json = JSON.parse(payload);
+    } catch {
+      return;
+    }
+    const choice = json.choices?.[0];
+    const delta = choice?.delta?.content;
+    if (typeof delta === "string" && delta.length > 0) {
+      yield delta;
+    }
+    if (choice?.finish_reason === "length") {
+      out.truncated = true;
+    }
+    if (json.usage) {
+      out.promptTokens = json.usage.prompt_tokens;
+      out.completionTokens = json.usage.completion_tokens;
+      for (const [key, value] of Object.entries(json.usage)) {
+        if (/energy|watt|wh|joule/i.test(key)) {
+          out.extras[key] = value as unknown;
+        }
+      }
+    }
+  }
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -86,29 +119,13 @@ export async function* streamCompletion(
     const lines = buffer.split("\n");
     buffer = lines.pop() ?? "";
     for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith("data:")) continue;
-      const payload = trimmed.slice(5).trim();
-      if (payload === "[DONE]") return;
-      let json: any;
-      try {
-        json = JSON.parse(payload);
-      } catch {
-        continue;
-      }
-      const delta = json.choices?.[0]?.delta?.content;
-      if (typeof delta === "string" && delta.length > 0) {
-        yield delta;
-      }
-      if (json.usage) {
-        usageOut.promptTokens = json.usage.prompt_tokens;
-        usageOut.completionTokens = json.usage.completion_tokens;
-        for (const [key, value] of Object.entries(json.usage)) {
-          if (/energy|watt|wh|joule/i.test(key)) {
-            usageOut.extras[key] = value as unknown;
-          }
-        }
-      }
+      yield* handleLine(line, usageOut);
     }
+  }
+  // Flush anything the stream left without a trailing newline — dropping this
+  // silently truncates the end of the output.
+  buffer += decoder.decode();
+  if (buffer.trim()) {
+    yield* handleLine(buffer, usageOut);
   }
 }
