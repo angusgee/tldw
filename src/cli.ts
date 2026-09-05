@@ -2,14 +2,17 @@
 import { createRequire } from "node:module";
 import { loadEnvFile } from "./env-file.js";
 import { extractVideoId } from "./extract-video-id.js";
-
-loadEnvFile();
 import { getTranscript } from "./transcript/index.js";
 import { loadLlmConfig, streamCompletion, type LlmUsage } from "./llm.js";
 import { summaryPrompt, reformatPrompt } from "./prompts.js";
 import { chunkText } from "./chunk-text.js";
 import { saveOutputs } from "./output.js";
 import { TldwError } from "./types.js";
+
+// ESM imports are hoisted, so nothing here can run before the modules above
+// load. That is fine as long as no imported module reads process.env at module
+// scope — env is only read inside functions, after this call has populated it.
+loadEnvFile();
 
 const require = createRequire(import.meta.url);
 const { version } = require("../package.json") as { version: string };
@@ -85,20 +88,24 @@ function parseArgs(argv: string[]): Args {
       case "--json":
         args.json = true;
         break;
-      case "--save":
+      case "--save": {
         args.save = true;
-        if (argv[i + 1] && !argv[i + 1].startsWith("-")) {
+        // Take the next token as the directory, but never swallow the video
+        // URL/id (e.g. `tldw --save dQw4w9WgXcQ`).
+        const next = argv[i + 1];
+        if (next && !next.startsWith("-") && !extractVideoId(next)) {
           args.saveDir = argv[++i];
         }
         break;
+      }
       case "--model":
-        args.model = argv[++i];
+        args.model = requireValue(argv, ++i, arg);
         break;
       case "--base-url":
-        args.baseUrl = argv[++i];
+        args.baseUrl = requireValue(argv, ++i, arg);
         break;
       case "--lang":
-        args.lang = argv[++i];
+        args.lang = requireValue(argv, ++i, arg);
         break;
       default:
         if (!arg.startsWith("-") && !args.input) {
@@ -111,6 +118,14 @@ function parseArgs(argv: string[]): Args {
   return args;
 }
 
+function requireValue(argv: string[], i: number, flag: string): string {
+  const value = argv[i];
+  if (value === undefined || value.startsWith("-")) {
+    fail(`Missing value for ${flag}\n\n${HELP}`);
+  }
+  return value;
+}
+
 function log(msg: string): void {
   process.stderr.write(`${msg}\n`);
 }
@@ -118,6 +133,34 @@ function log(msg: string): void {
 function fail(msg: string): never {
   process.stderr.write(`${msg}\n`);
   process.exit(1);
+}
+
+/** Fold one call's usage into the running totals. */
+function mergeUsage(totals: LlmUsage, call: LlmUsage): void {
+  if (call.promptTokens !== undefined) {
+    totals.promptTokens = (totals.promptTokens ?? 0) + call.promptTokens;
+  }
+  if (call.completionTokens !== undefined) {
+    totals.completionTokens = (totals.completionTokens ?? 0) + call.completionTokens;
+  }
+  for (const [key, value] of Object.entries(call.extras)) {
+    const prev = totals.extras[key];
+    totals.extras[key] =
+      typeof prev === "number" && typeof value === "number" ? prev + value : value;
+  }
+}
+
+/** Warn when a single LLM call was truncated or ended without a completion signal. */
+function warnIfIncomplete(usage: LlmUsage, label: string): void {
+  if (usage.truncated) {
+    log(`\nWarning: the model hit its output limit; the ${label} may be incomplete.`);
+  }
+  if (usage.sawDone === undefined && usage.finishReason === undefined) {
+    log(`\nWarning: the ${label} stream ended without a completion signal; the provider may have cut it short.`);
+  }
+  if (process.env.TLDW_DEBUG) {
+    log(`\n[debug] ${label}: finish_reason=${usage.finishReason ?? "none"} sawDone=${usage.sawDone ?? false}`);
+  }
 }
 
 function formatUsage(usage: LlmUsage): string {
@@ -174,22 +217,18 @@ async function main(): Promise<void> {
   }
 
   const config = loadLlmConfig({ baseUrl: args.baseUrl, model: args.model });
+  // Each LLM call gets its own usage object (providers report per-call, not
+  // cumulative); totals accumulate across the summary and every chunk.
   const usage: LlmUsage = { extras: {} };
 
   log(`Summarising with ${config.model}...\n`);
+  const summaryUsage: LlmUsage = { extras: {} };
   const summary = await collectStream(
-    streamCompletion(config, summaryPrompt(fullText), 2048, usage),
+    streamCompletion(config, summaryPrompt(fullText), 2048, summaryUsage),
     !args.json
   );
-  if (usage.truncated) {
-    log("\nWarning: the model hit its output limit; the summary may be incomplete.");
-  }
-  if (usage.sawDone === undefined && usage.finishReason === undefined) {
-    log("\nWarning: the stream ended without a completion signal; the provider may have cut it short.");
-  }
-  if (process.env.TLDW_DEBUG) {
-    log(`\n[debug] finish_reason=${usage.finishReason ?? "none"} sawDone=${usage.sawDone ?? false}`);
-  }
+  warnIfIncomplete(summaryUsage, "summary");
+  mergeUsage(usage, summaryUsage);
 
   let fullTranscriptMd: string | undefined;
   if (args.full) {
@@ -197,12 +236,15 @@ async function main(): Promise<void> {
     const formatted: string[] = [];
     for (let i = 0; i < chunks.length; i++) {
       log(`\nFormatting transcript chunk ${i + 1}/${chunks.length}...\n`);
+      const chunkUsage: LlmUsage = { extras: {} };
       formatted.push(
         await collectStream(
-          streamCompletion(config, reformatPrompt(chunks[i]), 8192, usage),
+          streamCompletion(config, reformatPrompt(chunks[i]), 8192, chunkUsage),
           !args.json
         )
       );
+      warnIfIncomplete(chunkUsage, `transcript chunk ${i + 1}/${chunks.length}`);
+      mergeUsage(usage, chunkUsage);
     }
     fullTranscriptMd = formatted.join("\n\n");
   }

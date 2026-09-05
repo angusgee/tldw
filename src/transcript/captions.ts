@@ -31,12 +31,12 @@ const ENTITIES: Record<string, string> = {
 };
 
 export function decodeEntities(text: string): string {
-  return text.replace(/&(#x?[0-9a-fA-F]+|[a-z]+);/g, (match, entity: string) => {
-    if (entity.startsWith("#x") || entity.startsWith("#X")) {
-      return String.fromCodePoint(parseInt(entity.slice(2), 16));
-    }
+  return text.replace(/&(#[xX][0-9a-fA-F]+|#[0-9]+|[a-z]+);/g, (match, entity: string) => {
     if (entity.startsWith("#")) {
-      return String.fromCodePoint(parseInt(entity.slice(1), 10));
+      const hex = entity[1] === "x" || entity[1] === "X";
+      const code = parseInt(entity.slice(hex ? 2 : 1), hex ? 16 : 10);
+      // Guard fromCodePoint: an out-of-range entity must not crash the run.
+      return code <= 0x10ffff ? String.fromCodePoint(code) : match;
     }
     return ENTITIES[entity] ?? match;
   });
@@ -45,14 +45,19 @@ export function decodeEntities(text: string): string {
 /** Parse YouTube's XML caption format: <transcript><text start="1.2" dur="3.4">…</text>… */
 export function parseCaptionXml(xml: string): TranscriptSegment[] {
   const segments: TranscriptSegment[] = [];
-  const re = /<text\s+start="([\d.]+)"\s+dur="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/g;
+  // Attributes may appear in any order, and dur is optional on some tracks.
+  const re = /<text\b([^>]*)>([\s\S]*?)<\/text>/g;
   let match: RegExpExecArray | null;
   while ((match = re.exec(xml)) !== null) {
-    const text = decodeEntities(match[3].replace(/<[^>]+>/g, "")).trim();
+    const attrs = match[1];
+    const start = attrs.match(/\bstart="([\d.]+)"/)?.[1];
+    if (start === undefined) continue;
+    const dur = attrs.match(/\bdur="([\d.]+)"/)?.[1] ?? "0";
+    const text = decodeEntities(match[2].replace(/<[^>]+>/g, "")).trim();
     if (!text) continue;
     segments.push({
-      offset: parseFloat(match[1]),
-      duration: parseFloat(match[2]),
+      offset: parseFloat(start),
+      duration: parseFloat(dur),
       text,
     });
   }
@@ -76,7 +81,13 @@ export async function fetchTrack(track: CaptionTrack): Promise<TranscriptSegment
     const body = await res.text();
     if (!body.trim()) continue;
     if (body.trimStart().startsWith("{")) {
-      const segments = parseJson3(JSON.parse(body));
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(body);
+      } catch {
+        continue; // malformed json3 body — fall back to the XML format
+      }
+      const segments = parseJson3(parsed);
       if (segments.length > 0) return segments;
     } else {
       const segments = parseCaptionXml(body);

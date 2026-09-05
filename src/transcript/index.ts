@@ -37,6 +37,15 @@ export async function getTranscript(
     failures.push(`watch-page captions: ${(err as Error).message}`);
   }
 
+  // Both paths failed. If the video itself is unplayable (private, age-gated,
+  // region-blocked), say that instead of blaming missing captions.
+  if (page.playabilityStatus !== "OK" && page.playabilityStatus !== "UNKNOWN") {
+    throw new TldwError(
+      `Video is not accessible: ${page.playabilityStatus}`,
+      "unavailable-video"
+    );
+  }
+
   throw new TldwError(
     `Could not get a transcript for this video. This usually means it has no captions.\nDetails:\n  - ${failures.join("\n  - ")}`,
     "no-captions"

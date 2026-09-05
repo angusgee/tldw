@@ -36,14 +36,33 @@ describe("parseCaptionXml", () => {
       { offset: 2.52, duration: 1.9, text: "it's great" },
     ]);
   });
+  it("handles a missing dur attribute and reordered attributes", () => {
+    const xml = `<transcript>
+  <text start="1.5">no duration</text>
+  <text dur="2" start="4">reordered</text>
+</transcript>`;
+    expect(parseCaptionXml(xml)).toEqual([
+      { offset: 1.5, duration: 0, text: "no duration" },
+      { offset: 4, duration: 2, text: "reordered" },
+    ]);
+  });
 });
 
 describe("decodeEntities", () => {
   it("decodes named, decimal and hex entities", () => {
     expect(decodeEntities("a &amp; b &#39;c&#39; &#x41; &quot;d&quot;")).toBe(`a & b 'c' A "d"`);
   });
+  it("decodes uppercase-X hex entities", () => {
+    expect(decodeEntities("&#X41;")).toBe("A");
+  });
   it("leaves unknown entities alone", () => {
     expect(decodeEntities("&wibble;")).toBe("&wibble;");
+  });
+  it("leaves out-of-range numeric entities alone instead of throwing", () => {
+    expect(decodeEntities("&#x110000; &#999999999;")).toBe("&#x110000; &#999999999;");
+  });
+  it("does not misparse malformed decimal entities as hex digits", () => {
+    expect(decodeEntities("&#3f;")).toBe("&#3f;");
   });
 });
 
@@ -75,6 +94,15 @@ describe("chunkText", () => {
   it("returns one chunk for short text", () => {
     expect(chunkText("Short text.", 12000)).toEqual(["Short text."]);
   });
+  it("hard-splits unpunctuated text so no chunk exceeds the limit", () => {
+    const text = Array(100).fill("word").join(" "); // no full stops at all
+    const chunks = chunkText(text, 50);
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const chunk of chunks) {
+      expect(chunk.length).toBeLessThanOrEqual(50);
+    }
+    expect(chunks.join(" ")).toBe(text);
+  });
 });
 
 describe("sanitizeFilename", () => {
@@ -83,5 +111,12 @@ describe("sanitizeFilename", () => {
   });
   it("converts spaces to dashes", () => {
     expect(sanitizeFilename("my video title")).toBe("my-video-title");
+  });
+  it("guards Windows reserved device names", () => {
+    expect(sanitizeFilename("CON")).toBe("_CON");
+    expect(sanitizeFilename("nul")).toBe("_nul");
+  });
+  it("caps very long names", () => {
+    expect(sanitizeFilename("x".repeat(500)).length).toBeLessThanOrEqual(120);
   });
 });
