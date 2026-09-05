@@ -1,4 +1,4 @@
-# TLDW — Too Long; Didn't Watch
+# TLDW: Too Long; Didn't Watch
 
 Summarise YouTube videos in your terminal. Local-first, **zero runtime dependencies**, bring your own OpenAI-compatible API key.
 
@@ -7,7 +7,7 @@ $ tldw https://www.youtube.com/watch?v=FluKUJyeYD8
 
 Fetching transcript for FluKUJyeYD8...
 Got 220 segments via innertube: "Did OpenAI actually build AGI? GPT-6 Astra first look"
-Summarising with qwen3-14b...
+Summarising with deepseek-v4-flash...
 
 ## Key points
 - ...streamed to your terminal as the model writes...
@@ -15,11 +15,11 @@ Summarising with qwen3-14b...
 
 ## Why
 
-Most videos are a two-minute read stretched over twenty minutes of footage. TLDW fetches the transcript and gives you the TL;DR, or the whole thing as clean, readable prose.
+Most videos are a two-minute read stretched over twenty minutes of footage. TLDW fetches the transcript and gives you the TL;DR, or the whole thing rewritten as clean, readable prose.
 
-- **Local-first**: runs entirely on your machine, using your own IP and your own LLM API key. No accounts, no telemetry, no middleman server.
-- **Zero dependencies**: the published package has no runtime dependencies at all.
-- **Provider-agnostic**: works with any OpenAI-compatible API — [NeuralWatt](https://portal.neuralwatt.com/) (cheap open models, energy-based pricing), [OpenRouter](https://openrouter.ai/), or anything else that speaks `/chat/completions`.
+- **Local-first**: runs entirely on your machine, on your own IP and your own LLM API key. No accounts, no telemetry, no middleman server.
+- **Zero dependencies**: the published package ships with no runtime dependencies at all.
+- **Provider-agnostic**: works with any OpenAI-compatible API. Use [NeuralWatt](https://portal.neuralwatt.com/) (cheap open models, energy-based pricing), [OpenRouter](https://openrouter.ai/), or anything else that speaks `/chat/completions`.
 
 ## Install
 
@@ -31,7 +31,7 @@ Requires Node 18.17+.
 
 ## Configure
 
-TLDW needs three settings, of which only the API key is required:
+TLDW reads three settings. Only the API key is required:
 
 ```bash
 TLDW_API_KEY=sk-...                            # required for summaries
@@ -39,9 +39,9 @@ TLDW_BASE_URL=https://api.neuralwatt.com/v1    # default; any OpenAI-compatible 
 TLDW_MODEL=deepseek-v4-flash                   # default, recommended - fast, cheap, smart
 ```
 
-There are three ways to provide them. If you set the same key in more than one place, real environment variables win, then a local `.env`, then the global file.
+There are three ways to supply them. If the same setting appears in more than one place, real environment variables win, then a local `.env`, then the global file.
 
-**Option 1 — global config file (recommended).** Create `~/.tldw.env` once and `tldw` works from any directory:
+**Option 1: global config file (recommended).** Create `~/.tldw.env` once and `tldw` works from any directory:
 
 ```bash
 # macOS / Linux
@@ -53,7 +53,7 @@ echo "TLDW_API_KEY=sk-..." > ~/.tldw.env
 Set-Content "$HOME\.tldw.env" "TLDW_API_KEY=sk-..."
 ```
 
-**Option 2 — local `.env` file.** Put a `.env` in the directory you run `tldw` from. Handy for trying a different provider or model in one project without touching your global config:
+**Option 2: local `.env` file.** Put a `.env` in the directory you run `tldw` from. Handy for trying a different provider or model in one project without touching your global config:
 
 ```bash
 TLDW_API_KEY=sk-or-...
@@ -61,7 +61,7 @@ TLDW_BASE_URL=https://openrouter.ai/api/v1
 TLDW_MODEL=anthropic/claude-haiku-4-5
 ```
 
-**Option 3 — environment variables.** Standard shell configuration; overrides both files:
+**Option 3: environment variables.** Standard shell configuration, and it overrides both files:
 
 ```bash
 # macOS / Linux (add to your shell profile to persist)
@@ -89,14 +89,14 @@ tldw <url> --model x --base-url y   # per-run provider overrides
 
 Two layers, tried in order:
 
-1. YouTube's InnerTube player API (Android client) — the same data the apps use
+1. YouTube's InnerTube player API (Android client), the same data the apps use
 2. Caption tracks from the watch page's embedded player response
 
-Everything is plain `fetch` from your machine with your IP, for the single video you asked about. TLDW never executes external programs, scrapes nothing in bulk, and stores nothing anywhere except your own disk (and only with `--save`).
+Both are plain `fetch` calls from your machine, on your IP, for the single video you asked about. TLDW runs no external programs, scrapes nothing in bulk, and writes nowhere but your own disk, and then only with `--save`.
 
 ## Disclaimer
 
-TLDW is an independent open-source tool for personal use. It is not affiliated with or endorsed by YouTube or Google. It accesses only publicly available caption data for individual videos at your explicit request; whether that use is permitted under YouTube's Terms of Service in your situation is your responsibility, as with tools like yt-dlp. Summaries are generated by whichever LLM you configure and may contain mistakes.
+TLDW is an independent open-source tool for personal use. It is not affiliated with or endorsed by YouTube or Google. It accesses only publicly available caption data, for individual videos, at your explicit request. Whether that use is permitted under YouTube's Terms of Service in your situation is your responsibility, as with tools like yt-dlp. Summaries are generated by whichever LLM you configure and may contain mistakes.
 
 ## Development
 
