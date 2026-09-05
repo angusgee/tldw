@@ -31,7 +31,7 @@ Requires Node 18.17+.
 
 ## Configure
 
-Set environment variables, or put the same lines in a `.env` file in the directory you run `tldw` from (real environment variables take precedence):
+Set environment variables, or put the same lines in a `.env` in the directory you run `tldw` from, or in `~/.tldw.env` to configure it globally (precedence: real environment variables, then local `.env`, then `~/.tldw.env`):
 
 ```bash
 TLDW_API_KEY=sk-...                            # required for summaries

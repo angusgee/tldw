@@ -1,12 +1,19 @@
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 
 /**
- * Minimal .env support, zero dependencies: loads KEY=value lines from a .env
- * in the current working directory. Real environment variables always win.
+ * Minimal .env support, zero dependencies. Load order (first found wins per
+ * key, real environment variables always beat both):
+ *   1. .env in the current working directory
+ *   2. ~/.tldw.env - global config so tldw works from any folder
  */
 export function loadEnvFile(): void {
-  const file = path.join(process.cwd(), ".env");
+  loadOne(path.join(process.cwd(), ".env"));
+  loadOne(path.join(os.homedir(), ".tldw.env"));
+}
+
+function loadOne(file: string): void {
   let raw: string;
   try {
     raw = fs.readFileSync(file, "utf-8");
