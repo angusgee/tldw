@@ -31,10 +31,12 @@ Requires Node 18.17+.
 
 ## Configure
 
+Set environment variables, or put the same lines in a `.env` file in the directory you run `tldw` from (real environment variables take precedence):
+
 ```bash
-export TLDW_API_KEY=sk-...                            # required for summaries
-export TLDW_BASE_URL=https://api.neuralwatt.com/v1    # default; any OpenAI-compatible URL works
-export TLDW_MODEL=your-model-id                       # pick one from your provider
+TLDW_API_KEY=sk-...                            # required for summaries
+TLDW_BASE_URL=https://api.neuralwatt.com/v1    # default; any OpenAI-compatible URL works
+TLDW_MODEL=your-model-id                       # pick one from your provider
 ```
 
 ## Use

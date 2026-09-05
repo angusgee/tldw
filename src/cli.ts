@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import { createRequire } from "node:module";
+import { loadEnvFile } from "./env-file.js";
 import { extractVideoId } from "./extract-video-id.js";
+
+loadEnvFile();
 import { getTranscript } from "./transcript/index.js";
 import { loadLlmConfig, streamCompletion, type LlmUsage } from "./llm.js";
 import { summaryPrompt, reformatPrompt } from "./prompts.js";
