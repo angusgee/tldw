@@ -1,0 +1,40 @@
+{
+  "name": "tldw-cli",
+  "version": "0.1.0",
+  "description": "TLDW - Too Long; Didn't Watch. Summarise YouTube videos in your terminal. Local-first, zero dependencies, bring your own OpenAI-compatible API key.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Angus Girvan (https://angusgee.dev)",
+  "repository": "github:angusgee/tldw",
+  "bin": {
+    "tldw": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "youtube",
+    "summary",
+    "transcript",
+    "tldw",
+    "tldr",
+    "cli",
+    "llm",
+    "ai"
+  ],
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}
