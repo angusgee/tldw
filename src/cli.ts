@@ -184,6 +184,12 @@ async function main(): Promise<void> {
   if (usage.truncated) {
     log("\nWarning: the model hit its output limit; the summary may be incomplete.");
   }
+  if (usage.sawDone === undefined && usage.finishReason === undefined) {
+    log("\nWarning: the stream ended without a completion signal; the provider may have cut it short.");
+  }
+  if (process.env.TLDW_DEBUG) {
+    log(`\n[debug] finish_reason=${usage.finishReason ?? "none"} sawDone=${usage.sawDone ?? false}`);
+  }
 
   let fullTranscriptMd: string | undefined;
   if (args.full) {

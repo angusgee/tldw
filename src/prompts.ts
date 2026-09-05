@@ -1,5 +1,5 @@
 export function summaryPrompt(transcriptText: string): string {
-  return `Please summarize the following video transcript concisely. Focus on the key points and main topics. Output the summary directly in Markdown format, without any introductory phrases like "Here's a summary:".
+  return `Please summarize the following video transcript concisely. Focus on the key points and main topics. Ignore sponsor reads, advertising segments and channel outros. Output the summary directly in Markdown format, without any introductory phrases like "Here's a summary:". End with a single-sentence overall takeaway so the summary reads as finished.
 
 Transcript:
 ${transcriptText}`;

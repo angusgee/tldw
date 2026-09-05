@@ -11,6 +11,10 @@ export interface LlmUsage {
   completionTokens?: number;
   /** Set when the model stopped because it hit max_tokens. */
   truncated?: boolean;
+  /** The finish_reason reported by the provider, if any. */
+  finishReason?: string;
+  /** Whether the stream terminated with a proper [DONE] sentinel. */
+  sawDone?: boolean;
   /** Any provider-specific extras (e.g. NeuralWatt energy figures). */
   extras: Record<string, unknown>;
 }
@@ -86,7 +90,10 @@ export async function* streamCompletion(
     const trimmed = line.trim();
     if (!trimmed.startsWith("data:")) return;
     const payload = trimmed.slice(5).trim();
-    if (payload === "[DONE]") return;
+    if (payload === "[DONE]") {
+      out.sawDone = true;
+      return;
+    }
     let json: any;
     try {
       json = JSON.parse(payload);
@@ -98,8 +105,11 @@ export async function* streamCompletion(
     if (typeof delta === "string" && delta.length > 0) {
       yield delta;
     }
-    if (choice?.finish_reason === "length") {
-      out.truncated = true;
+    if (typeof choice?.finish_reason === "string") {
+      out.finishReason = choice.finish_reason;
+      if (choice.finish_reason === "length") {
+        out.truncated = true;
+      }
     }
     if (json.usage) {
       out.promptTokens = json.usage.prompt_tokens;
