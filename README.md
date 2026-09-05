@@ -31,12 +31,46 @@ Requires Node 18.17+.
 
 ## Configure
 
-Set environment variables, or put the same lines in a `.env` in the directory you run `tldw` from, or in `~/.tldw.env` to configure it globally (precedence: real environment variables, then local `.env`, then `~/.tldw.env`):
+TLDW needs three settings, of which only the API key is required:
 
 ```bash
 TLDW_API_KEY=sk-...                            # required for summaries
 TLDW_BASE_URL=https://api.neuralwatt.com/v1    # default; any OpenAI-compatible URL works
-TLDW_MODEL=your-model-id                       # pick one from your provider
+TLDW_MODEL=deepseek-v4-flash                   # default, recommended - fast, cheap, smart
+```
+
+There are three ways to provide them. If you set the same key in more than one place, real environment variables win, then a local `.env`, then the global file.
+
+**Option 1 — global config file (recommended).** Create `~/.tldw.env` once and `tldw` works from any directory:
+
+```bash
+# macOS / Linux
+echo "TLDW_API_KEY=sk-..." > ~/.tldw.env
+```
+
+```powershell
+# Windows PowerShell
+Set-Content "$HOME\.tldw.env" "TLDW_API_KEY=sk-..."
+```
+
+**Option 2 — local `.env` file.** Put a `.env` in the directory you run `tldw` from. Handy for trying a different provider or model in one project without touching your global config:
+
+```bash
+TLDW_API_KEY=sk-or-...
+TLDW_BASE_URL=https://openrouter.ai/api/v1
+TLDW_MODEL=anthropic/claude-haiku-4-5
+```
+
+**Option 3 — environment variables.** Standard shell configuration; overrides both files:
+
+```bash
+# macOS / Linux (add to your shell profile to persist)
+export TLDW_API_KEY=sk-...
+```
+
+```powershell
+# Windows PowerShell (persists for your user account)
+[Environment]::SetEnvironmentVariable("TLDW_API_KEY", "sk-...", "User")
 ```
 
 ## Use

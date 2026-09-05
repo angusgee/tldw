@@ -23,16 +23,10 @@ export function loadLlmConfig(overrides: { baseUrl?: string; model?: string }): 
   const baseUrl =
     overrides.baseUrl ?? process.env.TLDW_BASE_URL ?? "https://api.neuralwatt.com/v1";
   const apiKey = process.env.TLDW_API_KEY;
-  const model = overrides.model ?? process.env.TLDW_MODEL;
+  const model = overrides.model ?? process.env.TLDW_MODEL ?? "deepseek-v4-flash";
   if (!apiKey) {
     throw new TldwError(
-      "TLDW_API_KEY is not set. Get a key from your provider (e.g. NeuralWatt or OpenRouter) and export TLDW_API_KEY.",
-      "config"
-    );
-  }
-  if (!model) {
-    throw new TldwError(
-      'TLDW_MODEL is not set. Pick a model from your provider and export TLDW_MODEL (e.g. "qwen/qwen3-14b" style ids), or pass --model.',
+      "TLDW_API_KEY is not set. Get a key from your provider (e.g. NeuralWatt or OpenRouter), then put it in ~/.tldw.env or export it. See the Configure section of the README.",
       "config"
     );
   }
