@@ -1,5 +1,7 @@
 # TLDW: Too Long; Didn't Watch
 
+[![CI](https://github.com/angusgee/tldw/actions/workflows/ci.yml/badge.svg)](https://github.com/angusgee/tldw/actions/workflows/ci.yml)
+
 Summarise YouTube videos in your terminal. Local-first, **zero runtime dependencies**, bring your own OpenAI-compatible API key.
 
 ```
