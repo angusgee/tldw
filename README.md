@@ -17,10 +17,10 @@ Most videos are a two-minute read stretched over twenty minutes of footage. TLDW
 ## Install
 
 ```bash
-npm install -g tldw-cli
+npm install -g @angusgee/tldw
 ```
 
-Requires Node 18.17+.
+Requires Node 18.17+. Installs the `tldw` command.
 
 ## Configure
 

@@ -1,13 +1,16 @@
 {
-  "name": "tldw-cli",
+  "name": "@angusgee/tldw",
   "version": "0.1.0",
   "description": "TLDW - Too Long; Didn't Watch. Summarise YouTube videos in your terminal. Local-first, zero dependencies, bring your own OpenAI-compatible API key.",
   "type": "module",
   "license": "MIT",
   "author": "Angus Girvan (https://angusgee.dev)",
-  "repository": "github:angusgee/tldw",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/angusgee/tldw.git"
+  },
   "bin": {
-    "tldw": "./dist/cli.js"
+    "tldw": "dist/cli.js"
   },
   "files": [
     "dist"
