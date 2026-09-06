@@ -38,16 +38,27 @@ export async function getTranscript(
   }
 
   // Both paths failed. If the video itself is unplayable (private, age-gated,
-  // region-blocked), say that instead of blaming missing captions.
+  // region-blocked), say that instead of blaming missing captions — but keep
+  // the per-path detail either way.
+  const detail = `\nDetails:\n  - ${failures.join("\n  - ")}`;
+
+  // LOGIN_REQUIRED on a public video is YouTube's bot check, not a private
+  // video: a retryable environment problem, so classify it as network.
+  if (page.playabilityStatus === "LOGIN_REQUIRED") {
+    throw new TldwError(
+      `YouTube is asking for a sign-in before serving this video ("confirm you're not a bot"). This usually means the request came from a flagged IP such as a VPN or datacentre — retry on a residential connection.${detail}`,
+      "network"
+    );
+  }
   if (page.playabilityStatus !== "OK" && page.playabilityStatus !== "UNKNOWN") {
     throw new TldwError(
-      `Video is not accessible: ${page.playabilityStatus}`,
+      `Video is not accessible: ${page.playabilityStatus}${detail}`,
       "unavailable-video"
     );
   }
 
   throw new TldwError(
-    `Could not get a transcript for this video. This usually means it has no captions.\nDetails:\n  - ${failures.join("\n  - ")}`,
+    `Could not get a transcript for this video. This usually means it has no captions.${detail}`,
     "no-captions"
   );
 }

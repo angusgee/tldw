@@ -28,10 +28,35 @@ const ENTITIES: Record<string, string> = {
   quot: '"',
   apos: "'",
   nbsp: " ",
+  rsquo: "’",
+  lsquo: "‘",
+  rdquo: "”",
+  ldquo: "“",
+  hellip: "…",
+  mdash: "—",
+  ndash: "–",
+  middot: "·",
+  deg: "°",
+  copy: "©",
+  reg: "®",
+  trade: "™",
+  pound: "£",
+  euro: "€",
+  frac12: "½",
+  times: "×",
+  eacute: "é",
+  egrave: "è",
+  agrave: "à",
+  ccedil: "ç",
+  ntilde: "ñ",
+  auml: "ä",
+  ouml: "ö",
+  uuml: "ü",
+  szlig: "ß",
 };
 
 export function decodeEntities(text: string): string {
-  return text.replace(/&(#[xX][0-9a-fA-F]+|#[0-9]+|[a-z]+);/g, (match, entity: string) => {
+  return text.replace(/&(#[xX][0-9a-fA-F]+|#[0-9]+|[a-zA-Z][a-zA-Z0-9]{1,30});/g, (match, entity: string) => {
     if (entity.startsWith("#")) {
       const hex = entity[1] === "x" || entity[1] === "X";
       const code = parseInt(entity.slice(hex ? 2 : 1), hex ? 16 : 10);
@@ -45,15 +70,17 @@ export function decodeEntities(text: string): string {
 /** Parse YouTube's XML caption format: <transcript><text start="1.2" dur="3.4">…</text>… */
 export function parseCaptionXml(xml: string): TranscriptSegment[] {
   const segments: TranscriptSegment[] = [];
-  // Attributes may appear in any order, and dur is optional on some tracks.
-  const re = /<text\b([^>]*)>([\s\S]*?)<\/text>/g;
+  // Attributes may appear in any order, dur is optional on some tracks, and
+  // empty cues can arrive as self-closing <text .../> elements.
+  const re = /<text\b([^>]*?)(?:\/>|>([\s\S]*?)<\/text>)/g;
   let match: RegExpExecArray | null;
   while ((match = re.exec(xml)) !== null) {
     const attrs = match[1];
-    const start = attrs.match(/\bstart="([\d.]+)"/)?.[1];
+    // Anchored so a hypothetical data-start attribute can never bind.
+    const start = attrs.match(/(?<![\w-])start="([\d.]+)"/)?.[1];
     if (start === undefined) continue;
-    const dur = attrs.match(/\bdur="([\d.]+)"/)?.[1] ?? "0";
-    const text = decodeEntities(match[2].replace(/<[^>]+>/g, "")).trim();
+    const dur = attrs.match(/(?<![\w-])dur="([\d.]+)"/)?.[1] ?? "0";
+    const text = decodeEntities((match[2] ?? "").replace(/<[^>]+>/g, "")).trim();
     if (!text) continue;
     segments.push({
       offset: parseFloat(start),

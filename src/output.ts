@@ -19,7 +19,7 @@ export async function saveOutputs(
   fullTranscriptMd?: string
 ): Promise<SavedPaths> {
   await fs.mkdir(dir, { recursive: true });
-  const base = sanitizeFilename(video.title || video.videoId);
+  const base = sanitizeFilename(video.title, video.videoId);
 
   const paths: SavedPaths = {
     json: path.join(dir, `${base}.json`),

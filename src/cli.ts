@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-import { createRequire } from "node:module";
 import { loadEnvFile } from "./env-file.js";
+import { parseArgs, HELP } from "./args.js";
+import { mergeUsage } from "./usage.js";
 import { extractVideoId } from "./extract-video-id.js";
 import { getTranscript } from "./transcript/index.js";
 import { loadLlmConfig, streamCompletion, type LlmUsage } from "./llm.js";
@@ -14,118 +15,6 @@ import { TldwError } from "./types.js";
 // scope — env is only read inside functions, after this call has populated it.
 loadEnvFile();
 
-const require = createRequire(import.meta.url);
-const { version } = require("../package.json") as { version: string };
-
-const HELP = `tldw ${version} — Too Long; Didn't Watch
-
-Summarise a YouTube video in your terminal.
-
-Usage:
-  tldw <url-or-video-id> [options]
-
-Options:
-  --full             Also produce the full transcript as clean, readable prose
-  --transcript       Print the raw transcript only (no LLM call, no key needed)
-  --save [dir]       Write output files (default dir: ./outputs)
-  --model <id>       Override TLDW_MODEL for this run
-  --base-url <url>   Override TLDW_BASE_URL for this run
-  --lang <code>      Preferred caption language (default: en)
-  --json             Machine-readable JSON output on stdout
-  --help             Show this help
-  --version          Show version
-
-Configuration (environment):
-  TLDW_API_KEY       API key for any OpenAI-compatible provider  (required for summaries)
-  TLDW_BASE_URL      Provider base URL (default: https://api.neuralwatt.com/v1)
-  TLDW_MODEL         Model id at your provider
-
-Examples:
-  tldw https://www.youtube.com/watch?v=dQw4w9WgXcQ
-  tldw dQw4w9WgXcQ --full --save
-  tldw dQw4w9WgXcQ --transcript --json
-`;
-
-interface Args {
-  input?: string;
-  full: boolean;
-  transcriptOnly: boolean;
-  save: boolean;
-  saveDir: string;
-  model?: string;
-  baseUrl?: string;
-  lang?: string;
-  json: boolean;
-}
-
-function parseArgs(argv: string[]): Args {
-  const args: Args = {
-    full: false,
-    transcriptOnly: false,
-    save: false,
-    saveDir: "./outputs",
-    json: false,
-  };
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    switch (arg) {
-      case "--help":
-      case "-h":
-        process.stdout.write(HELP);
-        process.exit(0);
-        break;
-      case "--version":
-      case "-v":
-        process.stdout.write(`${version}\n`);
-        process.exit(0);
-        break;
-      case "--full":
-        args.full = true;
-        break;
-      case "--transcript":
-        args.transcriptOnly = true;
-        break;
-      case "--json":
-        args.json = true;
-        break;
-      case "--save": {
-        args.save = true;
-        // Take the next token as the directory, but never swallow the video
-        // URL/id (e.g. `tldw --save dQw4w9WgXcQ`).
-        const next = argv[i + 1];
-        if (next && !next.startsWith("-") && !extractVideoId(next)) {
-          args.saveDir = argv[++i];
-        }
-        break;
-      }
-      case "--model":
-        args.model = requireValue(argv, ++i, arg);
-        break;
-      case "--base-url":
-        args.baseUrl = requireValue(argv, ++i, arg);
-        break;
-      case "--lang":
-        args.lang = requireValue(argv, ++i, arg);
-        break;
-      default:
-        if (!arg.startsWith("-") && !args.input) {
-          args.input = arg;
-        } else {
-          fail(`Unknown option: ${arg}\n\n${HELP}`);
-        }
-    }
-  }
-  return args;
-}
-
-function requireValue(argv: string[], i: number, flag: string): string {
-  const value = argv[i];
-  if (value === undefined || value.startsWith("-")) {
-    fail(`Missing value for ${flag}\n\n${HELP}`);
-  }
-  return value;
-}
-
 function log(msg: string): void {
   process.stderr.write(`${msg}\n`);
 }
@@ -133,21 +22,6 @@ function log(msg: string): void {
 function fail(msg: string): never {
   process.stderr.write(`${msg}\n`);
   process.exit(1);
-}
-
-/** Fold one call's usage into the running totals. */
-function mergeUsage(totals: LlmUsage, call: LlmUsage): void {
-  if (call.promptTokens !== undefined) {
-    totals.promptTokens = (totals.promptTokens ?? 0) + call.promptTokens;
-  }
-  if (call.completionTokens !== undefined) {
-    totals.completionTokens = (totals.completionTokens ?? 0) + call.completionTokens;
-  }
-  for (const [key, value] of Object.entries(call.extras)) {
-    const prev = totals.extras[key];
-    totals.extras[key] =
-      typeof prev === "number" && typeof value === "number" ? prev + value : value;
-  }
 }
 
 /** Warn when a single LLM call was truncated or ended without a completion signal. */
