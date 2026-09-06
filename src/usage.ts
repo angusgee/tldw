@@ -22,9 +22,8 @@ export function mergeUsage(totals: LlmUsage, call: LlmUsage): void {
       totals.extras[key] = value;
       continue;
     }
-    // Providers report per-call figures that may be unit-suffixed strings
-    // ("0.4 Wh"). Sum values whose units match; anything unmergeable keeps the
-    // latest value rather than presenting one chunk's figure as a bogus total.
+    // extras can be unit-suffixed strings like "0.4 Wh"
+    // sum when the units match otherwise keep the latest value
     const a = splitNumeric(prev);
     const b = splitNumeric(value);
     if (a && b && a.suffix === b.suffix) {

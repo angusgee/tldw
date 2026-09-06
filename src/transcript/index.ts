@@ -37,13 +37,10 @@ export async function getTranscript(
     failures.push(`watch-page captions: ${(err as Error).message}`);
   }
 
-  // Both paths failed. If the video itself is unplayable (private, age-gated,
-  // region-blocked), say that instead of blaming missing captions — but keep
-  // the per-path detail either way.
+  // both paths failed so check whether the video itself is blocked before blaming captions
   const detail = `\nDetails:\n  - ${failures.join("\n  - ")}`;
 
-  // LOGIN_REQUIRED on a public video is YouTube's bot check, not a private
-  // video: a retryable environment problem, so classify it as network.
+  // LOGIN_REQUIRED on a public video is the bot check not a private video
   if (page.playabilityStatus === "LOGIN_REQUIRED") {
     throw new TldwError(
       `YouTube is asking for a sign-in before serving this video ("confirm you're not a bot"). This usually means the request came from a flagged IP such as a VPN or datacentre — retry on a residential connection.${detail}`,

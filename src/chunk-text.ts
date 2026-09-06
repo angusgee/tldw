@@ -1,10 +1,8 @@
 export const CHUNK_CHAR_LIMIT = 12000;
 
 /**
- * Split text into chunks on sentence boundaries, each at most `limit` chars.
- * A single "sentence" longer than the limit (common in auto-generated
- * transcripts with no punctuation) is hard-split on whitespace so the limit
- * always holds.
+ * Split text into chunks on sentence boundaries, max `limit` chars each.
+ * Unpunctuated transcripts get hard-split on whitespace so the limit always holds.
  */
 export function chunkText(text: string, limit: number = CHUNK_CHAR_LIMIT): string[] {
   const sentences = text.split(/(?<=\.)\s+/).flatMap((s) => hardSplit(s, limit));
@@ -23,7 +21,7 @@ export function chunkText(text: string, limit: number = CHUNK_CHAR_LIMIT): strin
   return chunks;
 }
 
-/** Break one oversized sentence on whitespace (mid-word only as a last resort). */
+/** Break one oversized sentence on whitespace. Cuts mid-word as a last resort. */
 function hardSplit(sentence: string, limit: number): string[] {
   if (sentence.length <= limit) return [sentence];
   const pieces: string[] = [];

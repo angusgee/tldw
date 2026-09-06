@@ -1,5 +1,4 @@
 export interface TranscriptSegment {
-  /** Segment text. */
   text: string;
   /** Duration in seconds. */
   duration: number;

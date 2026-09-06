@@ -15,7 +15,7 @@ export interface LlmUsage {
   finishReason?: string;
   /** Whether the stream terminated with a proper [DONE] sentinel. */
   sawDone?: boolean;
-  /** Any provider-specific extras (e.g. NeuralWatt energy figures). */
+  /** Provider-specific extras like NeuralWatt energy figures. */
   extras: Record<string, unknown>;
 }
 
@@ -35,7 +35,7 @@ export function loadLlmConfig(overrides: { baseUrl?: string; model?: string }): 
 
 /**
  * Stream a chat completion from any OpenAI-compatible endpoint.
- * Yields content deltas; fills `usageOut` when the provider reports usage.
+ * Fills usageOut when the provider reports usage.
  */
 export async function* streamCompletion(
   config: LlmConfig,
@@ -126,8 +126,7 @@ export async function* streamCompletion(
       yield* handleLine(line, usageOut);
     }
   }
-  // Flush anything the stream left without a trailing newline — dropping this
-  // silently truncates the end of the output.
+  // flush any final chunk that arrived without a trailing newline
   buffer += decoder.decode();
   if (buffer.trim()) {
     yield* handleLine(buffer, usageOut);

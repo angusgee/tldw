@@ -10,9 +10,7 @@ import { chunkText } from "./chunk-text.js";
 import { saveOutputs } from "./output.js";
 import { TldwError } from "./types.js";
 
-// ESM imports are hoisted, so nothing here can run before the modules above
-// load. That is fine as long as no imported module reads process.env at module
-// scope — env is only read inside functions, after this call has populated it.
+// load env before any code reads process.env
 loadEnvFile();
 
 function log(msg: string): void {
@@ -91,8 +89,7 @@ async function main(): Promise<void> {
   }
 
   const config = loadLlmConfig({ baseUrl: args.baseUrl, model: args.model });
-  // Each LLM call gets its own usage object (providers report per-call, not
-  // cumulative); totals accumulate across the summary and every chunk.
+  // providers report usage per call so each call gets its own object and totals accumulate here
   const usage: LlmUsage = { extras: {} };
 
   log(`Summarising with ${config.model}...\n`);

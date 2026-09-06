@@ -2,10 +2,9 @@ import type { TranscriptSegment } from "../types.js";
 import { TldwError } from "../types.js";
 import { fetchTrack, pickTrack, type CaptionTrack } from "./captions.js";
 
-// Mirrors the approach of the actively maintained youtube-transcript-api:
-// InnerTube player endpoint with the ANDROID client, keyed by the watch
-// page's INNERTUBE_API_KEY. The Android client's caption URLs are not
-// PoToken-gated (unlike the web client's).
+// mirrors youtube-transcript-api
+// hits the InnerTube player endpoint as the ANDROID client with the watch page API key
+// the Android client's caption URLs are not PoToken-gated
 const ANDROID_CONTEXT = {
   client: { clientName: "ANDROID", clientVersion: "20.10.38" },
 };

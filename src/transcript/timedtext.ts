@@ -4,9 +4,8 @@ import { fetchTrack, pickTrack, type CaptionTrack } from "./captions.js";
 import type { WatchPage } from "./watch-page.js";
 
 /**
- * Fallback extraction: caption tracks from the watch page's embedded web
- * player response. Web-client caption URLs are increasingly PoToken-gated,
- * so this is second choice after the Android player path.
+ * Fallback extraction using caption tracks from the watch page player response.
+ * Web caption URLs are increasingly PoToken-gated so the Android path goes first.
  */
 export async function fetchViaWatchPageTracks(
   page: WatchPage,

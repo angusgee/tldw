@@ -3,10 +3,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 /**
- * Minimal .env support, zero dependencies. Load order (first found wins per
- * key, real environment variables always beat both):
- *   1. .env in the current working directory
- *   2. ~/.tldw.env - global config so tldw works from any folder
+ * Minimal .env support with zero dependencies.
+ * Loads .env from the cwd then ~/.tldw.env so tldw works from any folder.
+ * First found wins per key. Real environment variables beat both.
  */
 export function loadEnvFile(): void {
   loadOne(path.join(process.cwd(), ".env"));

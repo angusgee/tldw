@@ -79,10 +79,7 @@ export function parseArgs(argv: string[]): Args {
         break;
       case "--save": {
         args.save = true;
-        // Take the next token as the directory unless it is the only remaining
-        // candidate for the video URL/id. A directory name that merely looks
-        // like an id (any 11 chars, e.g. "transcripts") must not be rejected
-        // when the video is given elsewhere on the command line.
+        // next token is the save dir unless it is the only candidate left for the video id
         const next = argv[i + 1];
         if (next && !next.startsWith("-")) {
           const inputElsewhere =

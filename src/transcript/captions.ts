@@ -9,7 +9,7 @@ export interface CaptionTrack {
   kind?: string; // "asr" for auto-generated
 }
 
-/** Manual captions beat auto-generated; requested language beats English beats first. */
+/** Manual beats auto-generated. Requested language beats English beats first. */
 export function pickTrack(tracks: CaptionTrack[], lang?: string): CaptionTrack {
   const score = (t: CaptionTrack): number => {
     let s = 0;
@@ -60,7 +60,7 @@ export function decodeEntities(text: string): string {
     if (entity.startsWith("#")) {
       const hex = entity[1] === "x" || entity[1] === "X";
       const code = parseInt(entity.slice(hex ? 2 : 1), hex ? 16 : 10);
-      // Guard fromCodePoint: an out-of-range entity must not crash the run.
+      // out-of-range numeric entities stay as-is instead of throwing
       return code <= 0x10ffff ? String.fromCodePoint(code) : match;
     }
     return ENTITIES[entity] ?? match;
@@ -70,13 +70,13 @@ export function decodeEntities(text: string): string {
 /** Parse YouTube's XML caption format: <transcript><text start="1.2" dur="3.4">…</text>… */
 export function parseCaptionXml(xml: string): TranscriptSegment[] {
   const segments: TranscriptSegment[] = [];
-  // Attributes may appear in any order, dur is optional on some tracks, and
-  // empty cues can arrive as self-closing <text .../> elements.
+  // attributes come in any order and dur is optional
+  // empty cues can be self-closing
   const re = /<text\b([^>]*?)(?:\/>|>([\s\S]*?)<\/text>)/g;
   let match: RegExpExecArray | null;
   while ((match = re.exec(xml)) !== null) {
     const attrs = match[1];
-    // Anchored so a hypothetical data-start attribute can never bind.
+    // anchored so data-start can never match
     const start = attrs.match(/(?<![\w-])start="([\d.]+)"/)?.[1];
     if (start === undefined) continue;
     const dur = attrs.match(/(?<![\w-])dur="([\d.]+)"/)?.[1] ?? "0";
@@ -92,9 +92,9 @@ export function parseCaptionXml(xml: string): TranscriptSegment[] {
 }
 
 /**
- * Fetch one caption track. Tries json3 first (richer), falls back to the
- * default XML format (what youtube-transcript-api uses). An empty body on
- * both means the URL is PoToken-gated.
+ * Fetch one caption track.
+ * Tries json3 first then falls back to the XML format.
+ * An empty body on both means the URL is PoToken-gated.
  */
 export async function fetchTrack(track: CaptionTrack): Promise<TranscriptSegment[]> {
   const base = track.baseUrl.replace("&fmt=srv3", "");
