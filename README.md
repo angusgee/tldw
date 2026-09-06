@@ -5,7 +5,7 @@
 Summarise YouTube videos in your terminal. Local-first, **zero runtime dependencies**, bring your own OpenAI-compatible API key.
 
 ```
-$ tldw https://www.youtube.com/watch?v=FluKUJyeYD8
+$ tldw "https://www.youtube.com/watch?v=FluKUJyeYD8"
 
 Fetching transcript for FluKUJyeYD8...
 Got 220 segments via innertube: "Did OpenAI actually build AGI? GPT-6 Astra first look"
@@ -86,6 +86,8 @@ tldw <url> --json                   # machine-readable output for piping
 tldw <url> --lang de                # prefer a caption language
 tldw <url> --model x --base-url y   # per-run provider overrides
 ```
+
+Quote the URL. YouTube links often carry extra parameters (`&t=3s`, `&list=...`), and an unquoted `&` is a shell operator in every shell — PowerShell and bash will split the command and background half of it before tldw ever runs. Quoted, tldw handles any URL shape and extracts the video id itself.
 
 ## How it gets the transcript
 

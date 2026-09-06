@@ -28,9 +28,11 @@ Configuration (environment):
   TLDW_MODEL         Model id at your provider
 
 Examples:
-  tldw https://www.youtube.com/watch?v=dQw4w9WgXcQ
+  tldw "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
   tldw dQw4w9WgXcQ --full --save
   tldw dQw4w9WgXcQ --transcript --json
+
+Quote URLs: an unquoted & is a shell operator and will split the command.
 `;
 
 export interface Args {
