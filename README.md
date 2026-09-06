@@ -4,16 +4,7 @@
 
 Summarise YouTube videos in your terminal. Local-first, **zero runtime dependencies**, bring your own OpenAI-compatible API key.
 
-```
-$ tldw "https://www.youtube.com/watch?v=FluKUJyeYD8"
-
-Fetching transcript for FluKUJyeYD8...
-Got 220 segments via innertube: "Did OpenAI actually build AGI? GPT-6 Astra first look"
-Summarising with deepseek-v4-flash...
-
-## Key points
-- ...streamed to your terminal as the model writes...
-```
+![tldw summarising a YouTube video in the terminal](https://raw.githubusercontent.com/angusgee/tldw/main/assets/demo.gif)
 
 ## Why
 

@@ -3,3 +3,6 @@ dist/
 outputs/
 .env
 *.log
+
+# Raw recordings stay local
+assets-raw/
